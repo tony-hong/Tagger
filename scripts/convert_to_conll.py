@@ -2,6 +2,8 @@
 # author: Playinf
 # email: playinf@stu.xmu.edu.cn
 
+import re
+import os
 import sys
 
 
@@ -103,11 +105,33 @@ def print_to_conll(pred_labels, gold_props_file, output_filename):
 
 
 if __name__ == "__main__":
-    all_labels = []
-    with open(sys.argv[1]) as fd:
-        for text_line in fd:
-            labs = text_line.strip().split()
-            labs = convert_bio(labs)
-            all_labels.append(labs)
+    '''
+    Args:
+        | *1* (fn) -- path to all decodes files 
+        | *2* (fn) -- path to all propid files
+        | *3* (dir) -- output dir
+    '''
+    decode_fns = [os.path.join(sys.argv[1], name) for name in os.listdir(sys.argv[1]) if re.search(r'decodes', name)]
+    propid_fns = [os.path.join(sys.argv[2], name) for name in os.listdir(sys.argv[2]) if re.search(r'props', name)]
+    
+    print decode_fns
+    print propid_fns
+    for i, decode_fn in enumerate(decode_fns):
+        propid_fn = propid_fns[i]
+        output_name = re.findall(r'split/(.*)_pred', propid_fn)[-1]
+        output_name += '_srl.conll'
+        output_fn = os.path.join(sys.argv[3], output_name)
+        print output_name
+        print output_fn
 
-    print_to_conll(all_labels, sys.argv[2], sys.argv[3])
+        all_labels = []
+        with open(decode_fn, 'r') as fd:
+            for text_line in fd:
+                labs = text_line.strip().split()
+                labs = convert_bio(labs)
+                all_labels.append(labs)
+
+        # print all_labels
+        print 'Processing ...'
+        print_to_conll(all_labels, propid_fn, output_fn)
+        print 'Done !'
